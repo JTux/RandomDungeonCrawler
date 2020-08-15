@@ -4,8 +4,14 @@ using System.Text;
 
 namespace ConsoleDungeon.Entities.Rooms
 {
-    public struct RoomCoord
+    public struct RoomCoords
     {
+        public RoomCoords(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
         public int X { get; set; }
         public int Y { get; set; }
 

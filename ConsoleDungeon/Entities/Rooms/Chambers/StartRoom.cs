@@ -7,6 +7,11 @@ namespace ConsoleDungeon.Entities.Rooms.Chambers
 {
     public class StartRoom : Chamber
     {
+        public StartRoom()
+        {
+            Coords = new RoomCoords(0,0);
+        }
+
         public override Loot Loot => null;
     }
 }
