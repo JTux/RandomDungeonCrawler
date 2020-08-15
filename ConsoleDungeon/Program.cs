@@ -13,13 +13,10 @@ namespace ConsoleDungeon
         {
             while (true)
             {
-
                 for (int i = 0; i < 10; i++)
                 {
                     var dungeon = Dungeon.Generate();
-
                     PrintMap(dungeon);
-                    Console.WriteLine();
                 }
 
                 Console.ReadLine();
@@ -43,9 +40,7 @@ namespace ConsoleDungeon
                     var allRooms = orderedRooms.Where(r => r.Coords.X == x && r.Coords.Y == y).ToList();
                     var room = allRooms.FirstOrDefault();
                     if(allRooms.Count > 1)
-                    {
                         Console.Write(allRooms.Count);
-                    }
                     else if (room is Chamber)
                     {
                         Console.ForegroundColor = room is StartRoom ? ConsoleColor.Red : ConsoleColor.Blue;
@@ -53,16 +48,13 @@ namespace ConsoleDungeon
                         Console.ForegroundColor = ConsoleColor.Gray;
                     }
                     else if(room is Hallway)
-                    {
                         Console.Write("H");
-                    }
                     else
-                    {
                         Console.Write(" ");
-                    }
                 }
                 Console.WriteLine();
             }
+            Console.WriteLine();
         }
 
     }
