@@ -12,9 +12,11 @@ namespace ConsoleDungeon
     {
         static void Main(string[] args)
         {
-            var dungeon = Dungeon.Generate();
-            HandleMovement(dungeon);
+            //var customDungeon = GetCustomDungeon();
+            //HandleMovement(customDungeon);
 
+            var randomizedDungeon = Dungeon.Generate();
+            HandleMovement(randomizedDungeon);
 
             Console.ReadLine();
         }
@@ -46,10 +48,17 @@ namespace ConsoleDungeon
                     }
                     else
                     {
+                        // Print Chamber
                         if (room.Coords.Equals(userPos))
                         {
                             Console.ForegroundColor = ConsoleColor.Yellow;
                             Console.Write("U");
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                        }
+                        else if (room is BossRoom)
+                        {
+                            Console.ForegroundColor = ConsoleColor.DarkRed;
+                            Console.Write("!");
                             Console.ForegroundColor = ConsoleColor.Gray;
                         }
                         else if (room is Chamber)
@@ -65,13 +74,13 @@ namespace ConsoleDungeon
 
                         verticalConnections.Add(room.AdjacentSouth != null ? "| " : "  ");
                     }
+
                     // Connect Halls
                     Console.Write(room != null && room.AdjacentEast != null ? "-" : " ");
-
-
                 }
                 Console.WriteLine();
 
+                // Print Vertical Connections
                 foreach (var connection in verticalConnections)
                 {
                     Console.Write(connection);
@@ -84,15 +93,9 @@ namespace ConsoleDungeon
 
         static void HandleMovement(Dungeon dungeon)
         {
-            void WriteOptions(Room room, List<Direction> directions)
-            {
-                Console.Write($"You can move: ");
-                foreach (var direction in directions)
-                    Console.Write(direction + " ");
-            }
-
             var room = dungeon.Rooms.FirstOrDefault(r => r is StartRoom);
             RoomCoords userPos = new RoomCoords(0, 0);
+
             while (true)
             {
                 PrintMap(dungeon, userPos);
@@ -107,48 +110,136 @@ namespace ConsoleDungeon
                 if (room.AdjacentWest != null)
                     directions.Add(Direction.West);
 
-                WriteOptions(room, directions);
-                switch (Console.ReadKey(true).Key)
-                {
-                    case ConsoleKey.W:
-                    case ConsoleKey.UpArrow:
-                        if (directions.Contains(Direction.North) && room.AdjacentNorth != null)
-                        {
-                            room = room.AdjacentNorth;
-                            userPos.Y++;
-                        }
-                        break;
-                    case ConsoleKey.A:
-                    case ConsoleKey.LeftArrow:
-                        if (directions.Contains(Direction.West) && room.AdjacentWest != null)
-                        {
-                            room = room.AdjacentWest;
-                            userPos.X--;
-                        }
-                        break;
-                    case ConsoleKey.S:
-                    case ConsoleKey.DownArrow:
-                        if (directions.Contains(Direction.South) && room.AdjacentSouth != null)
-                        {
-                            room = room.AdjacentSouth;
-                            userPos.Y--;
-                        }
-                        break;
-                    case ConsoleKey.D:
-                    case ConsoleKey.RightArrow:
-                        if (directions.Contains(Direction.East) && room.AdjacentEast != null)
-                        {
-                            room = room.AdjacentEast;
-                            userPos.X++;
-                        }
-                        break;
-                    default:
-                        break;
-                }
+                Console.Write($"You can move: ");
+                foreach (var direction in directions)
+                    Console.Write(direction + " ");
+
+                EvaluatePlayerMove(ref room, ref userPos, directions);
                 Console.Clear();
             }
         }
 
+        static void EvaluatePlayerMove(ref Room room, ref RoomCoords userPos, List<Direction> directions)
+        {
+            var moveDirection = GetMoveDirection(directions);
+            switch (moveDirection)
+            {
+                case Direction.North:
+                    if (room.AdjacentNorth != null)
+                    {
+                        room = room.AdjacentNorth;
+                        userPos.Y++;
+                    }
+                    break;
+                case Direction.West:
+                    if (room.AdjacentWest != null)
+                    {
+                        room = room.AdjacentWest;
+                        userPos.X--;
+                    }
+                    break;
+                case Direction.South:
+                    if (room.AdjacentSouth != null)
+                    {
+                        room = room.AdjacentSouth;
+                        userPos.Y--;
+                    }
+                    break;
+                case Direction.East:
+                    if (room.AdjacentEast != null)
+                    {
+                        room = room.AdjacentEast;
+                        userPos.X++;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        static Direction GetMoveDirection(List<Direction> directions)
+        {
+            while (true)
+            {
+                var moveDirection = Console.ReadKey(true).Key;
+                Direction direction = Direction.North;
+                switch (moveDirection)
+                {
+                    case ConsoleKey.W:
+                    case ConsoleKey.UpArrow:
+                        direction = Direction.North;
+                        break;
+                    case ConsoleKey.A:
+                    case ConsoleKey.LeftArrow:
+                        direction = Direction.West;
+                        break;
+                    case ConsoleKey.S:
+                    case ConsoleKey.DownArrow:
+                        direction = Direction.South;
+                        break;
+                    case ConsoleKey.D:
+                    case ConsoleKey.RightArrow:
+                        direction = Direction.East;
+                        break;
+                }
+
+                if (directions.Contains(direction))
+                {
+                    return direction;
+                }
+            }
+        }
+
+        static Dungeon GetCustomDungeon()
+        {
+            var roomN = new BossRoom() { Coords = new RoomCoords(0, 1) };
+            var roomNE = new Chamber() { Coords = new RoomCoords(1, 1) };
+            var roomW = new Chamber() { Coords = new RoomCoords(-1, 0) };
+            var roomC = new StartRoom() { Coords = new RoomCoords(0, 0) };
+            var roomE = new Chamber() { Coords = new RoomCoords(1, 0) };
+            var roomSW = new Chamber() { Coords = new RoomCoords(-1, -1) };
+            var roomS = new Chamber() { Coords = new RoomCoords(0, -1) };
+            var roomSE = new Chamber() { Coords = new RoomCoords(1, -1) };
+            var roomNW = new Chamber() { Coords = new RoomCoords(-1, 1) };
+
+            roomNW.AdjacentEast = roomN;
+            roomNW.AdjacentSouth = roomW;
+
+            roomN.AdjacentWest = roomNW;
+            roomN.AdjacentEast = roomNE;
+
+            roomNE.AdjacentWest = roomN;
+            roomNE.AdjacentSouth = roomE;
+
+            roomE.AdjacentNorth = roomNE;
+            roomE.AdjacentWest = roomC;
+
+            roomC.AdjacentEast = roomE;
+            roomC.AdjacentWest = roomW;
+            roomC.AdjacentSouth = roomS;
+
+            roomS.AdjacentNorth = roomC;
+            roomS.AdjacentEast = roomSE;
+            roomS.AdjacentWest = roomSW;
+
+            roomSE.AdjacentWest = roomS;
+
+            roomW.AdjacentNorth = roomNW;
+            roomW.AdjacentEast = roomC;
+            roomW.AdjacentSouth = roomSW;
+
+            roomSW.AdjacentNorth = roomW;
+            roomSW.AdjacentEast = roomS;
+
+            return new Dungeon()
+            {
+                Rooms = new List<Room>
+                {
+                    roomNW, roomN, roomNE, roomW, roomC, roomE, roomSW, roomS, roomSE
+                }
+            };
+        }
     }
+
     enum Direction { North, East, South, West }
 }

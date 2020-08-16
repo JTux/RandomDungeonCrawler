@@ -8,6 +8,11 @@ namespace ConsoleDungeon.Entities.Rooms
 {
     public class Chamber : Room
     {
+        public Chamber()
+        {
+            Name = "Chamber";
+        }
+
         public virtual Loot Loot { get; set; }
         public virtual Encounter Encounter { get; set; }
     }

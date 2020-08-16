@@ -20,6 +20,7 @@ namespace ConsoleDungeon.Entities
         private List<Room> Chambers => Rooms.Where(r => r is Chamber).ToList();
         private HashSet<RoomCoords> OccupiedCoords => Rooms.Select(r => r.Coords).ToHashSet();
 
+        // Building the Dungeon
         public static Dungeon Generate()
         {
             var branchCount = Random.Next(MinBranchCount, MaxBranchCount + 1);
@@ -30,11 +31,11 @@ namespace ConsoleDungeon.Entities
             for (int i = 0; i < branchCount; i++)
                 dungeon.GenerateBranch();
 
+            dungeon.GenerateBossRoom();
+
             return dungeon.OccupiedCoords.Count != dungeon.Rooms.Count ? Generate() : dungeon;
         }
-
         private void CreateInitialChamber() => Rooms.Add(new StartRoom());
-
         private void GenerateBranch()
         {
             Room chamber;
@@ -49,13 +50,11 @@ namespace ConsoleDungeon.Entities
                     break;
             }
         }
-
         private Room GetRandomChamber()
         {
             var availableChambers = Chambers.Where(c => c.TotalEmptySides > 0).ToList();
             return availableChambers[Random.Next(0, availableChambers.Count)];
         }
-
         private void GenerateHall(Room chamber)
         {
             var currentRoom = chamber;
@@ -67,7 +66,6 @@ namespace ConsoleDungeon.Entities
                 currentRoom = nextRoom;
             }
         }
-
         private Room GetNextHall(Room startingRoom)
         {
             while (true)
@@ -103,7 +101,6 @@ namespace ConsoleDungeon.Entities
                 }
             }
         }
-
         private bool GenerateChamber()
         {
             var endOfHall = Rooms.FirstOrDefault(r => r is Hallway && r.TotalEmptySides == 3);
@@ -138,7 +135,6 @@ namespace ConsoleDungeon.Entities
 
             return false;
         }
-
         private void ConvertEndOfHall(Room endOfHall, int directionalId, RoomCoords newCoords)
         {
             var neighborCell = Rooms.FirstOrDefault(r => r.Coords.Equals(newCoords));
@@ -157,7 +153,6 @@ namespace ConsoleDungeon.Entities
             var hallIndex = Rooms.IndexOf(endOfHall);
             Rooms[hallIndex] = newChamber;
         }
-
         private void ConnectRoom(Room startingRoom, Room newRoom, int directionalId)
         {
             switch (directionalId)
@@ -180,7 +175,6 @@ namespace ConsoleDungeon.Entities
                     break;
             }
         }
-
         private int GetOccupiedSideCount(Room newRoom)
         {
             var occupiedSideCount = 0;
@@ -191,7 +185,6 @@ namespace ConsoleDungeon.Entities
 
             return occupiedSideCount;
         }
-
         private RoomCoords GetCoords(Room startingRoom, int directionalId)
         {
             return new RoomCoords
@@ -210,15 +203,44 @@ namespace ConsoleDungeon.Entities
                 })
             };
         }
+        private void GenerateBossRoom()
+        {
+            var isolatedChambers = Chambers.Where(c => c.TotalEmptySides == 3).ToList();
+            var chamber = isolatedChambers[Random.Next(0, isolatedChambers.Count)];
 
+            var connectingRoom = chamber.AdjacentRooms.FirstOrDefault(r => r != null);
+
+            var chamberIndex = Rooms.IndexOf(chamber);
+            Rooms[chamberIndex] = new BossRoom()
+            {
+                AdjacentNorth = chamber.AdjacentNorth,
+                AdjacentEast = chamber.AdjacentEast,
+                AdjacentSouth = chamber.AdjacentSouth,
+                AdjacentWest = chamber.AdjacentWest,
+                Coords = chamber.Coords
+            };
+
+            int directionalId = 0;
+            if (chamber.AdjacentEast == connectingRoom)
+                directionalId = 1;
+            else if (chamber.AdjacentSouth == connectingRoom)
+                directionalId = 2;
+            else if (chamber.AdjacentWest == connectingRoom)
+                directionalId = 3;
+
+            ConnectRoom(chamber, connectingRoom, directionalId);
+        }
+
+        // Populating the Dungeon
         private void PopulateRooms()
         {
-            foreach(var room in Rooms)
+            foreach (var room in Rooms)
             {
                 switch (room)
                 {
                     case Hallway hall:
                     case StartRoom startChamber:
+                    case KeyRoom keyRoom:
                     default:
                         break;
                 }
