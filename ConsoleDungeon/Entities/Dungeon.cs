@@ -9,10 +9,10 @@ namespace ConsoleDungeon.Entities
 {
     public class Dungeon
     {
-        private const int MinBranchLength = 3;
+        private const int MinBranchCount = 3;
+        private const int MaxBranchCount = 7;
+        private const int MinBranchLength = 4;
         private const int MaxBranchLength = 7;
-        private const int MinChamberCount = 4;
-        private const int MaxChamberCount = 7;
 
         private static readonly Random Random = new Random();
 
@@ -22,13 +22,12 @@ namespace ConsoleDungeon.Entities
 
         public static Dungeon Generate()
         {
-            var dungeon = new Dungeon();
+            var branchCount = Random.Next(MinBranchCount, MaxBranchCount + 1);
 
+            var dungeon = new Dungeon();
             dungeon.CreateInitialChamber();
 
-            var maxBranchCount = Random.Next(MinBranchLength, MaxBranchLength + 1);
-
-            for (int i = 0; i < maxBranchCount; i++)
+            for (int i = 0; i < branchCount; i++)
                 dungeon.GenerateBranch();
 
             return dungeon.OccupiedCoords.Count != dungeon.Rooms.Count ? Generate() : dungeon;
@@ -60,7 +59,7 @@ namespace ConsoleDungeon.Entities
         private void GenerateHall(Room chamber)
         {
             var currentRoom = chamber;
-            var branchLength = Random.Next(MinChamberCount, MaxChamberCount + 1);
+            var branchLength = Random.Next(MinBranchLength, MaxBranchLength + 1);
             for (int i = 0; i < branchLength; i++)
             {
                 var nextRoom = GetNextHall(currentRoom);
@@ -210,6 +209,20 @@ namespace ConsoleDungeon.Entities
                     _ => 0
                 })
             };
+        }
+
+        private void PopulateRooms()
+        {
+            foreach(var room in Rooms)
+            {
+                switch (room)
+                {
+                    case Hallway hall:
+                    case StartRoom startChamber:
+                    default:
+                        break;
+                }
+            }
         }
     }
 }
