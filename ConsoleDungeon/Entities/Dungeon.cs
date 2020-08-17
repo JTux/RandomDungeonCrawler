@@ -35,8 +35,8 @@ namespace ConsoleDungeon.Entities
             dungeon.GenerateBossRoom();
 
             return dungeon.GetIsValidDungeon()
-                ? Generate(minBranchCount, maxBranchCount)
-                : dungeon;
+                ? dungeon
+                : Generate(minBranchCount, maxBranchCount);
         }
 
         private void CreateInitialChamber() => Rooms.Add(new StartRoom());
@@ -44,8 +44,9 @@ namespace ConsoleDungeon.Entities
         {
             Room chamber;
 
-            do chamber = GetRandomChamber();
-            while (chamber.TotalEmptySides <= 0);
+            chamber = GetRandomChamber();
+            if (chamber is null)
+                return;
 
             GenerateHall(chamber);
             while (!GenerateChamber())
@@ -56,7 +57,11 @@ namespace ConsoleDungeon.Entities
         }
         private Room GetRandomChamber()
         {
-            var availableChambers = Chambers.Where(c => c.TotalEmptySides > 0).ToList();
+            var availableChambers = Chambers.Where(c => GetOccupiedSideCount(c) < 4).ToList();
+
+            if (availableChambers.Count == 0)
+                return null;
+
             return availableChambers[Random.Next(0, availableChambers.Count)];
         }
         private void GenerateHall(Room chamber)
@@ -241,9 +246,11 @@ namespace ConsoleDungeon.Entities
 
         private bool GetIsValidDungeon()
         {
-            return OccupiedCoords.Count != Rooms.Count
+            bool isGood = !(OccupiedCoords.Count != Rooms.Count
                    || Chambers.FirstOrDefault(c => c is StartRoom) is null
-                   || Chambers.FirstOrDefault(c => c is BossRoom) is null;
+                   || Chambers.FirstOrDefault(c => c is BossRoom) is null);
+
+            return isGood;
         }
 
         // Populating the Dungeon

@@ -12,10 +12,12 @@ namespace ConsoleDungeon
     {
         static void Main(string[] args)
         {
+            Console.CursorVisible = false;
+            
             //var customDungeon = GetCustomDungeon();
             //HandleMovement(customDungeon);
 
-            var randomizedDungeon = Dungeon.Generate(5, 10);
+            var randomizedDungeon = Dungeon.Generate(3, 7);
             HandleMovement(randomizedDungeon);
 
             Console.ReadLine();
@@ -49,29 +51,7 @@ namespace ConsoleDungeon
                     else
                     {
                         // Print Chamber
-                        if (room.Coords.Equals(userPos))
-                        {
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.Write("U");
-                            Console.ForegroundColor = ConsoleColor.Gray;
-                        }
-                        else if (room is BossRoom)
-                        {
-                            Console.ForegroundColor = ConsoleColor.DarkRed;
-                            Console.Write("!");
-                            Console.ForegroundColor = ConsoleColor.Gray;
-                        }
-                        else if (room is Chamber)
-                        {
-                            Console.ForegroundColor = room is StartRoom ? ConsoleColor.Red : ConsoleColor.Blue;
-                            Console.Write("C");
-                            Console.ForegroundColor = ConsoleColor.Gray;
-                        }
-                        else if (room is Hallway)
-                        {
-                            Console.Write("H");
-                        }
-
+                        PrintRoomLabel(room.Coords.Equals(userPos) ? 'U' : room.GetType().Name[0]);
                         verticalConnections.Add(room.AdjacentSouth != null ? "| " : "  ");
                     }
 
@@ -96,9 +76,11 @@ namespace ConsoleDungeon
             var room = dungeon.Rooms.FirstOrDefault(r => r is StartRoom);
             RoomCoords userPos = new RoomCoords(0, 0);
 
+            PrintMap(dungeon, userPos);
+            int cursorTop = Console.CursorTop;
             while (true)
             {
-                PrintMap(dungeon, userPos);
+                var previousPos = userPos;
 
                 List<Direction> directions = new List<Direction>();
                 if (room.AdjacentNorth != null)
@@ -110,13 +92,71 @@ namespace ConsoleDungeon
                 if (room.AdjacentWest != null)
                     directions.Add(Direction.West);
 
-                Console.Write($"You can move: ");
-                foreach (var direction in directions)
-                    Console.Write(direction + " ");
-
+                PrintMoveOptions(directions, cursorTop);
                 EvaluatePlayerMove(ref room, ref userPos, directions);
-                Console.Clear();
+                UpdatePlayerPosition(dungeon, userPos, previousPos);
             }
+        }
+
+        static void UpdatePlayerPosition(Dungeon dungeon, RoomCoords currentPos, RoomCoords previousPos)
+        {
+            var orderedRooms = dungeon.Rooms.OrderBy(r => r.Coords.X).ThenBy(r => r.Coords.Y).ToList();
+            var xValues = orderedRooms.Select(r => r.Coords.X).OrderBy(x => x).ToHashSet().ToList();
+            var yValues = orderedRooms.Select(r => r.Coords.Y).OrderByDescending(y => y).ToHashSet().ToList();
+
+            var roomAtPreviousPos = dungeon.Rooms.FirstOrDefault(r => r.Coords.Equals(previousPos));
+            UpdateChamber(previousPos, xValues, yValues, roomAtPreviousPos.GetType().Name[0]);
+
+            UpdateChamber(currentPos, xValues, yValues, 'U');
+        }
+
+        static void UpdateChamber(RoomCoords previousPos, List<int> xValues, List<int> yValues, char label)
+        {
+            var left = xValues.IndexOf(previousPos.X);
+            Console.CursorLeft = left * 2;
+            var top = yValues.IndexOf(previousPos.Y);
+            Console.CursorTop = top * 2;
+
+            PrintRoomLabel(label);
+        }
+
+        static void PrintRoomLabel(char label)
+        {
+            switch (label)
+            {
+                case 'B':
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.Write("!");
+                    break;
+                case 'S':
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write("C");
+                    break;
+                case 'C':
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.Write("C");
+                    break;
+                case 'U':
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write("U");
+                    break;
+                case 'H':
+                    Console.Write("H");
+                    break;
+            }
+            Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        static void PrintMoveOptions(List<Direction> directions, int cursorTop)
+        {
+            Console.CursorLeft = 0;
+            Console.CursorTop = cursorTop;
+
+            Console.Write($"You can move: ");
+            foreach (var direction in directions)
+                Console.Write(direction + " ");
+
+            Console.Write(new string(' ', 36 - Console.CursorLeft));
         }
 
         static void EvaluatePlayerMove(ref Room room, ref RoomCoords userPos, List<Direction> directions)

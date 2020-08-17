@@ -14,6 +14,7 @@ namespace ConsoleDungeon.Entities.Rooms
 
         public string Name { get; set; }
         public string Description { get; set; }
+        public bool IsExplored { get; set; }
 
         public Room AdjacentNorth { get; set; }
         public Room AdjacentEast { get; set; }
