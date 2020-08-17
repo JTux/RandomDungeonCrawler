@@ -15,7 +15,7 @@ namespace ConsoleDungeon
             //var customDungeon = GetCustomDungeon();
             //HandleMovement(customDungeon);
 
-            var randomizedDungeon = Dungeon.Generate();
+            var randomizedDungeon = Dungeon.Generate(5, 10);
             HandleMovement(randomizedDungeon);
 
             Console.ReadLine();

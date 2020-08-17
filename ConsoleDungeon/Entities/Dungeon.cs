@@ -11,7 +11,7 @@ namespace ConsoleDungeon.Entities
     {
         private const int MinBranchCount = 3;
         private const int MaxBranchCount = 7;
-        private const int MinBranchLength = 4;
+        private const int MinBranchLength = 3;
         private const int MaxBranchLength = 7;
 
         private static readonly Random Random = new Random();
@@ -21,9 +21,10 @@ namespace ConsoleDungeon.Entities
         private HashSet<RoomCoords> OccupiedCoords => Rooms.Select(r => r.Coords).ToHashSet();
 
         // Building the Dungeon
-        public static Dungeon Generate()
+        public static Dungeon Generate() => Generate(MinBranchCount, MaxBranchCount);
+        public static Dungeon Generate(int minBranchCount, int maxBranchCount)
         {
-            var branchCount = Random.Next(MinBranchCount, MaxBranchCount + 1);
+            var branchCount = Random.Next(minBranchCount, maxBranchCount + 1);
 
             var dungeon = new Dungeon();
             dungeon.CreateInitialChamber();
@@ -33,8 +34,11 @@ namespace ConsoleDungeon.Entities
 
             dungeon.GenerateBossRoom();
 
-            return dungeon.OccupiedCoords.Count != dungeon.Rooms.Count ? Generate() : dungeon;
+            return dungeon.GetIsValidDungeon()
+                ? Generate(minBranchCount, maxBranchCount)
+                : dungeon;
         }
+
         private void CreateInitialChamber() => Rooms.Add(new StartRoom());
         private void GenerateBranch()
         {
@@ -206,6 +210,10 @@ namespace ConsoleDungeon.Entities
         private void GenerateBossRoom()
         {
             var isolatedChambers = Chambers.Where(c => c.TotalEmptySides == 3).ToList();
+
+            if (isolatedChambers.Count == 0)
+                return;
+
             var chamber = isolatedChambers[Random.Next(0, isolatedChambers.Count)];
 
             var connectingRoom = chamber.AdjacentRooms.FirstOrDefault(r => r != null);
@@ -229,6 +237,13 @@ namespace ConsoleDungeon.Entities
                 directionalId = 3;
 
             ConnectRoom(chamber, connectingRoom, directionalId);
+        }
+
+        private bool GetIsValidDungeon()
+        {
+            return OccupiedCoords.Count != Rooms.Count
+                   || Chambers.FirstOrDefault(c => c is StartRoom) is null
+                   || Chambers.FirstOrDefault(c => c is BossRoom) is null;
         }
 
         // Populating the Dungeon
